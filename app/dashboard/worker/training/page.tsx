@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { useLanguage } from "@/components/shared/LanguageProvider";
 
 type Module = {
 	id: string;
@@ -23,13 +24,13 @@ type ChatMessage = {
 };
 
 export default function WorkerTraining() {
+	const { language, setLanguage, t } = useLanguage();
 	const [modules, setModules] = useState<Module[]>([]);
 	const [progress, setProgress] = useState<Progress[]>([]);
 	const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
 	const [chatInput, setChatInput] = useState("");
 	const [chatLoading, setChatLoading] = useState(false);
 	const [selectedModuleId, setSelectedModuleId] = useState<string | null>(null);
-	const [language, setLanguage] = useState<"en" | "bn">("en");
 
 	useEffect(() => {
 		const loadModules = async () => {
@@ -75,8 +76,8 @@ export default function WorkerTraining() {
 
 	const getStatus = (moduleId: string) => {
 		const item = progress.find((entry) => entry.module_id === moduleId);
-		if (!item) return "Not started";
-		return item.completed ? "Completed" : "In progress";
+		if (!item) return t("Not started", "শুরু হয়নি");
+		return item.completed ? t("Completed", "সম্পন্ন") : t("In progress", "চলমান");
 	};
 
 	const effectiveModuleId = selectedModuleId ?? (modules[0]?.id ?? null);
@@ -102,7 +103,7 @@ export default function WorkerTraining() {
 
 			const data = await res.json();
 			if (!res.ok) {
-				throw new Error(data?.error ?? "Unable to get response");
+				throw new Error(data?.error ?? t("Unable to get response", "উত্তর পাওয়া যায়নি"));
 			}
 
 			setChatMessages((prev) => [...prev, { role: "assistant", content: data.reply }]);
@@ -110,7 +111,7 @@ export default function WorkerTraining() {
 			const err = error as { message?: string } | null;
 			setChatMessages((prev) => [
 				...prev,
-				{ role: "assistant", content: err?.message ?? "Something went wrong." },
+				{ role: "assistant", content: err?.message ?? t("Something went wrong.", "কিছু একটা ভুল হয়েছে।") },
 			]);
 		} finally {
 			setChatLoading(false);
@@ -121,21 +122,21 @@ export default function WorkerTraining() {
 		<div className="min-h-screen bg-gray-50 p-8">
 			<div className="max-w-5xl mx-auto space-y-8">
 				<header className="space-y-2">
-					<h1 className="text-3xl font-bold text-teal-dark">Training Center</h1>
-					<p className="text-gray-600">Complete modules to unlock more tasks.</p>
+					<h1 className="text-3xl font-bold text-teal-dark">{t("Training Center", "প্রশিক্ষণ কেন্দ্র")}</h1>
+					<p className="text-gray-600">{t("Complete modules to unlock more tasks.", "আরও কাজ আনলক করতে মডিউল শেষ করুন।")}</p>
 				</header>
 
 				<div className="grid gap-4">
 					{modules.length === 0 ? (
 						<div className="bg-white border border-gray-100 rounded-2xl p-8 text-gray-500">
-							No modules yet. Ask an admin to add training content.
+							{t("No modules yet. Ask an admin to add training content.", "এখনও কোন মডিউল নেই। প্রশিক্ষণ যোগ করতে অ্যাডমিনকে জানান।")}
 						</div>
 					) : (
 						modules.map((module) => (
 							<div key={module.id} className="bg-white border border-gray-100 rounded-2xl p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
 								<div>
 									<p className="text-lg font-bold text-gray-900">{module.title}</p>
-									<p className="text-sm text-gray-600">Duration: {module.duration_minutes ?? 30} min</p>
+									<p className="text-sm text-gray-600">{t("Duration", "সময়কাল")}: {module.duration_minutes ?? 30} {t("min", "মিনিট")}</p>
 								</div>
 								<div className="flex items-center gap-4">
 									<span className="text-sm text-gray-500">{getStatus(module.id)}</span>
@@ -143,7 +144,7 @@ export default function WorkerTraining() {
 										onClick={() => handleComplete(module.id)}
 										className="bg-teal-dark text-white px-4 py-2 rounded-full font-semibold"
 									>
-										Mark complete
+										{t("Mark complete", "সম্পন্ন চিহ্নিত করুন")}
 									</button>
 								</div>
 							</div>
@@ -154,21 +155,21 @@ export default function WorkerTraining() {
 				<div className="bg-white border border-gray-100 rounded-2xl p-6 space-y-4">
 					<div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
 						<div>
-							<h2 className="text-xl font-bold text-gray-900">Training Chatbot</h2>
-							<p className="text-sm text-gray-600">Ask questions about your training modules.</p>
+							<h2 className="text-xl font-bold text-gray-900">{t("Training Chatbot", "প্রশিক্ষণ চ্যাটবট")}</h2>
+							<p className="text-sm text-gray-600">{t("Ask questions about your training modules.", "প্রশিক্ষণ মডিউল সম্পর্কে প্রশ্ন করুন।")}</p>
 						</div>
 						<div className="flex items-center gap-2">
 							<button
 								onClick={() => setLanguage("en")}
 								className={`px-3 py-1 rounded-full text-sm font-semibold ${language === "en" ? "bg-teal-dark text-white" : "bg-gray-100 text-gray-600"}`}
 							>
-								English
+								{t("English", "ইংরেজি")}
 							</button>
 							<button
 								onClick={() => setLanguage("bn")}
 								className={`px-3 py-1 rounded-full text-sm font-semibold ${language === "bn" ? "bg-teal-dark text-white" : "bg-gray-100 text-gray-600"}`}
 							>
-								Bengali
+								{t("Bangla", "বাংলা")}
 							</button>
 						</div>
 					</div>
@@ -186,13 +187,13 @@ export default function WorkerTraining() {
 							))}
 						</select>
 						<div className="text-xs text-gray-500 self-center">
-							{selectedModule ? `Module: ${selectedModule.title}` : "Select a module"}
+							{selectedModule ? t("Module: {title}", "মডিউল: {title}", { title: selectedModule.title }) : t("Select a module", "একটি মডিউল নির্বাচন করুন")}
 						</div>
 					</div>
 
 					<div className="bg-gray-50 rounded-2xl p-4 space-y-3 max-h-72 overflow-y-auto">
 						{chatMessages.length === 0 ? (
-							<p className="text-sm text-gray-500">Ask a question to get started.</p>
+							<p className="text-sm text-gray-500">{t("Ask a question to get started.", "শুরু করতে একটি প্রশ্ন করুন।")}</p>
 						) : (
 							chatMessages.map((msg, index) => (
 								<div
@@ -200,7 +201,7 @@ export default function WorkerTraining() {
 									className={`text-sm p-3 rounded-xl ${msg.role === "user" ? "bg-white text-gray-900 border" : "bg-teal-50 text-teal-dark"}`}
 								>
 									<strong className="block text-xs uppercase tracking-widest mb-1">
-										{msg.role === "user" ? "You" : "Assistant"}
+										{msg.role === "user" ? t("You", "আপনি") : t("Assistant", "সহকারী")}
 									</strong>
 									{msg.content}
 								</div>
@@ -212,7 +213,7 @@ export default function WorkerTraining() {
 						<input
 							value={chatInput}
 							onChange={(e) => setChatInput(e.target.value)}
-							placeholder="Type your question..."
+							placeholder={t("Type your question...", "আপনার প্রশ্ন লিখুন...")}
 							className="flex-1 px-3 py-2 rounded-lg border border-gray-200"
 							disabled={chatLoading}
 							onKeyDown={(e) => {
@@ -227,18 +228,18 @@ export default function WorkerTraining() {
 							disabled={chatLoading || !chatInput.trim() || !selectedModule}
 							className="bg-teal-dark text-white px-5 py-2 rounded-full font-semibold disabled:opacity-50"
 						>
-							{chatLoading ? "Thinking..." : "Send"}
+							{chatLoading ? t("Thinking...", "ভাবছি...") : t("Send", "পাঠান")}
 						</button>
 					</div>
 				</div>
 
 				<div className="bg-teal-dark text-white rounded-2xl p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
 					<div>
-						<p className="text-sm uppercase tracking-widest text-saffron font-semibold">Next step</p>
-						<p className="text-lg font-semibold">Finish the training and start earning today.</p>
+						<p className="text-sm uppercase tracking-widest text-saffron font-semibold">{t("Next step", "পরবর্তী ধাপ")}</p>
+						<p className="text-lg font-semibold">{t("Finish the training and start earning today.", "প্রশিক্ষণ শেষ করে আজই আয় শুরু করুন।")}</p>
 					</div>
 					<Link href="/dashboard/worker/tasks" className="bg-white text-teal-dark px-4 py-2 rounded-full font-semibold">
-						Browse tasks
+						{t("Browse tasks", "কাজ দেখুন")}
 					</Link>
 				</div>
 			</div>

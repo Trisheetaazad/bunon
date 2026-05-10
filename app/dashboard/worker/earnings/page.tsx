@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { useLanguage } from "@/components/shared/LanguageProvider";
 
 type Payment = {
 	id: string;
@@ -12,6 +13,7 @@ type Payment = {
 };
 
 export default function WorkerEarnings() {
+	const { t } = useLanguage();
 	const [payments, setPayments] = useState<Payment[]>([]);
 	const [loading, setLoading] = useState(true);
 
@@ -46,37 +48,37 @@ export default function WorkerEarnings() {
 		<div className="min-h-screen bg-gray-50 p-8">
 			<div className="max-w-5xl mx-auto space-y-8">
 				<header className="space-y-2">
-					<h1 className="text-3xl font-bold text-teal-dark">Earnings</h1>
-					<p className="text-gray-600">Track your approved and pending payments.</p>
+					<h1 className="text-3xl font-bold text-teal-dark">{t("Earnings", "আয়")}</h1>
+					<p className="text-gray-600">{t("Track your approved and pending payments.", "অনুমোদিত ও অপেক্ষমান পেমেন্ট ট্র্যাক করুন।")}</p>
 				</header>
 
 				<div className="grid grid-cols-1 md:grid-cols-3 gap-6">
 					<div className="bg-white p-6 rounded-2xl border border-gray-100">
-						<p className="text-sm text-gray-500">Total earned</p>
+						<p className="text-sm text-gray-500">{t("Total earned", "মোট আয়")}</p>
 						<p className="text-2xl font-bold text-gray-900">BDT {totals.total.toLocaleString()}</p>
 					</div>
 					<div className="bg-white p-6 rounded-2xl border border-gray-100">
-						<p className="text-sm text-gray-500">Pending</p>
+						<p className="text-sm text-gray-500">{t("Pending", "অপেক্ষমান")}</p>
 						<p className="text-2xl font-bold text-gray-900">BDT {totals.pending.toLocaleString()}</p>
 					</div>
 					<div className="bg-white p-6 rounded-2xl border border-gray-100">
-						<p className="text-sm text-gray-500">Payments</p>
+						<p className="text-sm text-gray-500">{t("Payments", "পেমেন্ট")}</p>
 						<p className="text-2xl font-bold text-gray-900">{payments.length}</p>
 					</div>
 				</div>
 
 				<div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
 					<div className="grid grid-cols-4 gap-4 px-6 py-4 text-xs uppercase tracking-widest text-gray-500 font-semibold bg-gray-50">
-						<span>Payment</span>
-						<span>Amount</span>
-						<span>Status</span>
-						<span>Date</span>
+						<span>{t("Payment", "পেমেন্ট")}</span>
+						<span>{t("Amount", "পরিমাণ")}</span>
+						<span>{t("Status", "অবস্থা")}</span>
+						<span>{t("Date", "তারিখ")}</span>
 					</div>
 					<div className="divide-y">
 						{loading ? (
-							<div className="px-6 py-6 text-sm text-gray-500">Loading payments...</div>
+							<div className="px-6 py-6 text-sm text-gray-500">{t("Loading payments...", "পেমেন্ট লোড হচ্ছে...")}</div>
 						) : payments.length === 0 ? (
-							<div className="px-6 py-6 text-sm text-gray-500">No payments yet.</div>
+							<div className="px-6 py-6 text-sm text-gray-500">{t("No payments yet.", "এখনও কোন পেমেন্ট নেই।")}</div>
 						) : (
 							payments.map((payment) => (
 								<div key={payment.id} className="grid grid-cols-4 gap-4 px-6 py-4 text-sm items-center">

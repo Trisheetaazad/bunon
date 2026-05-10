@@ -3,8 +3,10 @@ import { useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { useLanguage } from "@/components/shared/LanguageProvider";
 
 export default function Login() {
+  const { t } = useLanguage();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const router = useRouter();
@@ -48,14 +50,14 @@ export default function Login() {
   return (
     <div className="w-full">
       <div>
-        <h2 className="text-3xl font-bold text-teal-dark mb-8 text-center">Welcome Back</h2>
+        <h2 className="text-3xl font-bold text-teal-dark mb-8 text-center">{t("Welcome Back", "ফিরে স্বাগতম")}</h2>
         <form onSubmit={handleLogin} className="space-y-4">
-          <input type="email" placeholder="Email" className="w-full p-3 border rounded-lg" onChange={(e) => setEmail(e.target.value)} required />
-          <input type="password" placeholder="Password" className="w-full p-3 border rounded-lg" onChange={(e) => setPassword(e.target.value)} required />
-          <button className="w-full bg-teal-dark text-white py-3 rounded-lg font-bold">Login</button>
+          <input type="email" placeholder={t("Email", "ইমেইল")} className="w-full p-3 border rounded-lg" onChange={(e) => setEmail(e.target.value)} required />
+          <input type="password" placeholder={t("Password", "পাসওয়ার্ড")} className="w-full p-3 border rounded-lg" onChange={(e) => setPassword(e.target.value)} required />
+          <button className="w-full bg-teal-dark text-white py-3 rounded-lg font-bold">{t("Login", "লগইন")}</button>
         </form>
         <p className="mt-4 text-center text-sm">
-          Don&apos;t have an account? <Link href="/auth/register" className="text-saffron font-bold">Register here</Link>
+          {t("Don't have an account?", "অ্যাকাউন্ট নেই?")} <Link href="/auth/register" className="text-saffron font-bold">{t("Register here", "এখানে নিবন্ধন করুন")}</Link>
         </p>
       </div>
     </div>

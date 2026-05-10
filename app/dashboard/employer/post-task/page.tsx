@@ -2,9 +2,11 @@
 import { useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
+import { useLanguage } from "@/components/shared/LanguageProvider";
 
 export default function PostTask() {
   const router = useRouter();
+  const { t } = useLanguage();
   const [loading, setLoading] = useState(false);
   const [task, setTask] = useState({
     title: "",
@@ -16,6 +18,23 @@ export default function PostTask() {
     requiredSkills: [] as string[],
   });
 
+  const skillLabel = (skill: string) => {
+    switch (skill) {
+      case "data_entry":
+        return t("Data entry", "ডাটা এন্ট্রি");
+      case "transcription":
+        return t("Transcription", "ট্রান্সক্রিপশন");
+      case "moderation":
+        return t("Moderation", "মডারেশন");
+      case "quality_check":
+        return t("Quality check", "মান যাচাই");
+      case "form_filling":
+        return t("Form filling", "ফর্ম পূরণ");
+      default:
+        return skill.replace("_", " ");
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -23,7 +42,7 @@ export default function PostTask() {
     const { data: { session } } = await supabase.auth.getSession();
     const employerId = session?.user?.id;
     if (!employerId) {
-      alert("Please log in as an employer first.");
+      alert(t("Please log in as an employer first.", "প্রথমে নিয়োগদাতা হিসেবে লগইন করুন।"));
       setLoading(false);
       return;
     }
@@ -35,7 +54,7 @@ export default function PostTask() {
       .maybeSingle();
 
     if (employerError || !employerRow) {
-      alert("Employer profile not found. Please complete employer registration.");
+      alert(t("Employer profile not found. Please complete employer registration.", "নিয়োগদাতার প্রোফাইল পাওয়া যায়নি। অনুগ্রহ করে নিয়োগদাতা রেজিস্ট্রেশন সম্পন্ন করুন।"));
       setLoading(false);
       return;
     }
@@ -54,10 +73,10 @@ export default function PostTask() {
 
     if (error) {
       console.error("tasks insert error:", error);
-      alert("Error posting task: " + error.message + " — see console for details.");
+      alert(t("Error posting task: {message} — see console for details.", "কাজ পোস্ট করতে সমস্যা: {message} — বিস্তারিত কনসোলে দেখুন।", { message: error.message }));
     } else {
       console.log("task posted:", taskData);
-      alert("Task posted successfully!");
+      alert(t("Task posted successfully!", "কাজ সফলভাবে পোস্ট হয়েছে!"));
       router.push("/dashboard/employer");
     }
     setLoading(false);
@@ -66,27 +85,27 @@ export default function PostTask() {
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
       <div className="max-w-2xl w-full bg-white rounded-3xl shadow-xl p-10">
-        <h1 className="text-3xl font-bold text-teal-dark mb-2">Post a New Task</h1>
-        <p className="text-gray-600 mb-8">Fill in the details to find a skilled worker for your project.</p>
+        <h1 className="text-3xl font-bold text-teal-dark mb-2">{t("Post a New Task", "নতুন কাজ পোস্ট করুন")}</h1>
+        <p className="text-gray-600 mb-8">{t("Fill in the details to find a skilled worker for your project.", "আপনার প্রকল্পের জন্য দক্ষ কর্মী খুঁজতে বিস্তারিত দিন।")}</p>
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
-            <label className="block text-sm font-bold text-gray-700 mb-2">Job Title</label>
+            <label className="block text-sm font-bold text-gray-700 mb-2">{t("Job Title", "কাজের শিরোনাম")}</label>
             <input
               required
               type="text"
-              placeholder="e.g. Product image tagging"
+              placeholder={t("e.g. Product image tagging", "যেমন: পণ্যের ছবিতে ট্যাগিং")}
               className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-teal-dark outline-none"
               onChange={(e) => setTask({ ...task, title: e.target.value })}
             />
           </div>
 
           <div>
-            <label className="block text-sm font-bold text-gray-700 mb-2">Description</label>
+            <label className="block text-sm font-bold text-gray-700 mb-2">{t("Description", "বিবরণ")}</label>
             <textarea
               required
               rows={4}
-              placeholder="Describe the steps and requirements..."
+              placeholder={t("Describe the steps and requirements...", "ধাপ ও প্রয়োজনীয়তা লিখুন...")}
               className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-teal-dark outline-none"
               onChange={(e) => setTask({ ...task, description: e.target.value })}
             />
@@ -94,21 +113,21 @@ export default function PostTask() {
 
           <div className="grid md:grid-cols-2 gap-6">
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">Category</label>
+              <label className="block text-sm font-bold text-gray-700 mb-2">{t("Category", "ক্যাটাগরি")}</label>
               <select
                 className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-teal-dark outline-none"
                 value={task.category}
                 onChange={(e) => setTask({ ...task, category: e.target.value })}
               >
-                <option value="data_labeling">Data labeling</option>
-                <option value="transcription">Transcription</option>
-                <option value="moderation">Moderation</option>
-                <option value="form_filling">Form filling</option>
-                <option value="other">Other</option>
+                <option value="data_labeling">{t("Data labeling", "ডেটা লেবেলিং")}</option>
+                <option value="transcription">{t("Transcription", "ট্রান্সক্রিপশন")}</option>
+                <option value="moderation">{t("Moderation", "মডারেশন")}</option>
+                <option value="form_filling">{t("Form filling", "ফর্ম পূরণ")}</option>
+                <option value="other">{t("Other", "অন্যান্য")}</option>
               </select>
             </div>
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">Deadline</label>
+              <label className="block text-sm font-bold text-gray-700 mb-2">{t("Deadline", "সময়সীমা")}</label>
               <input
                 type="date"
                 className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-teal-dark outline-none"
@@ -119,7 +138,7 @@ export default function PostTask() {
 
           <div className="grid md:grid-cols-2 gap-6">
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">Pay per unit (৳)</label>
+              <label className="block text-sm font-bold text-gray-700 mb-2">{t("Pay per unit (৳)", "ইউনিটপ্রতি পারিশ্রমিক (৳)")}</label>
               <input
                 required
                 type="number"
@@ -129,7 +148,7 @@ export default function PostTask() {
               />
             </div>
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">Total units</label>
+              <label className="block text-sm font-bold text-gray-700 mb-2">{t("Total units", "মোট ইউনিট")}</label>
               <input
                 required
                 type="number"
@@ -141,7 +160,7 @@ export default function PostTask() {
           </div>
 
           <div>
-            <label className="block text-sm font-bold text-gray-700 mb-2">Required skills</label>
+            <label className="block text-sm font-bold text-gray-700 mb-2">{t("Required skills", "প্রয়োজনীয় দক্ষতা")}</label>
             <div className="grid sm:grid-cols-2 gap-3">
               {["data_entry", "transcription", "moderation", "quality_check", "form_filling"].map((skill) => (
                 <label key={skill} className="flex items-center gap-2 text-sm text-gray-600">
@@ -155,7 +174,7 @@ export default function PostTask() {
                       setTask({ ...task, requiredSkills: updated });
                     }}
                   />
-                  {skill.replace("_", " ")}
+                  {skillLabel(skill)}
                 </label>
               ))}
             </div>
@@ -166,7 +185,7 @@ export default function PostTask() {
             disabled={loading}
             className="w-full bg-teal-dark text-white py-4 rounded-xl font-bold text-lg hover:bg-teal-light transition-all disabled:opacity-50"
           >
-            {loading ? "Posting..." : "Publish Task"}
+            {loading ? t("Posting...", "পোস্ট হচ্ছে...") : t("Publish Task", "কাজ প্রকাশ করুন")}
           </button>
         </form>
       </div>

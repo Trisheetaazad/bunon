@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { useLanguage } from "@/components/shared/LanguageProvider";
 
 type ImpactData = {
   total_workers: number;
@@ -20,6 +21,7 @@ const fallback: ImpactData = {
 };
 
 export default function ImpactStats() {
+  const { t } = useLanguage();
   const [impact, setImpact] = useState<ImpactData>(fallback);
   const [display, setDisplay] = useState<ImpactData>(fallback);
   const displayRef = useRef(display);
@@ -77,13 +79,13 @@ export default function ImpactStats() {
 
   const stats = useMemo(
     () => [
-      { label: "Women registered", value: display.total_workers.toLocaleString() },
-      { label: "Women employed", value: display.total_employed.toLocaleString() },
-      { label: "Taka distributed", value: `৳${display.total_earned.toLocaleString()}` },
-      { label: "Tasks completed", value: display.total_tasks_completed.toLocaleString() },
-      { label: "Districts reached", value: display.districts_reached.toLocaleString() },
+      { label: t("Women registered", "নিবন্ধিত নারী"), value: display.total_workers.toLocaleString() },
+      { label: t("Women employed", "কর্মরত নারী"), value: display.total_employed.toLocaleString() },
+      { label: t("Taka distributed", "বিতরণকৃত টাকা"), value: `৳${display.total_earned.toLocaleString()}` },
+      { label: t("Tasks completed", "সম্পন্ন কাজ"), value: display.total_tasks_completed.toLocaleString() },
+      { label: t("Districts reached", "আবদ্ধ জেলা"), value: display.districts_reached.toLocaleString() },
     ],
-    [display]
+    [display, t]
   );
 
   return (

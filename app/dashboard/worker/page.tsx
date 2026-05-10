@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 import { Wallet, CheckCircle, Clock, Star } from "lucide-react";
+import { useLanguage } from "@/components/shared/LanguageProvider";
 
 type AssignmentSummary = {
   id: string;
@@ -16,14 +17,15 @@ type AssignmentSummary = {
 
 export default function Dashboard() {
   const router = useRouter();
+  const { t } = useLanguage();
   const [loading, setLoading] = useState(true);
   const [userName, setUserName] = useState("User");
   const [assignments, setAssignments] = useState<AssignmentSummary[]>([]);
   const [stats, setStats] = useState([
-    { label: "Total Earned", value: "৳ 0", icon: <Wallet className="text-saffron" />, color: "bg-orange-50" },
-    { label: "Tasks Done", value: "0", icon: <CheckCircle className="text-teal-dark" />, color: "bg-teal-50" },
-    { label: "Active Jobs", value: "0", icon: <Clock className="text-blue-600" />, color: "bg-blue-50" },
-    { label: "Rating", value: "New", icon: <Star className="text-yellow-500" />, color: "bg-yellow-50" },
+    { label: t("Total Earned", "মোট আয়"), value: "৳ 0", icon: <Wallet className="text-saffron" />, color: "bg-orange-50" },
+    { label: t("Tasks Done", "সম্পন্ন কাজ"), value: "0", icon: <CheckCircle className="text-teal-dark" />, color: "bg-teal-50" },
+    { label: t("Active Jobs", "চলমান কাজ"), value: "0", icon: <Clock className="text-blue-600" />, color: "bg-blue-50" },
+    { label: t("Rating", "রেটিং"), value: t("New", "নতুন"), icon: <Star className="text-yellow-500" />, color: "bg-yellow-50" },
   ]);
 
   useEffect(() => {
@@ -57,10 +59,10 @@ export default function Dashboard() {
       const totalEarnings = paymentData?.reduce((sum, p) => sum + (Number(p.amount) || 0), 0) ?? 0;
 
       setStats([
-        { label: "Total Earned", value: `৳ ${totalEarnings}`, icon: <Wallet className="text-saffron" />, color: "bg-orange-50" },
-        { label: "Tasks Done", value: completed.toString(), icon: <CheckCircle className="text-teal-dark" />, color: "bg-teal-50" },
-        { label: "Active Jobs", value: active.toString(), icon: <Clock className="text-blue-600" />, color: "bg-blue-50" },
-        { label: "Rating", value: completed > 0 ? "5.0" : "New", icon: <Star className="text-yellow-500" />, color: "bg-yellow-50" },
+        { label: t("Total Earned", "মোট আয়"), value: `৳ ${totalEarnings}`, icon: <Wallet className="text-saffron" />, color: "bg-orange-50" },
+        { label: t("Tasks Done", "সম্পন্ন কাজ"), value: completed.toString(), icon: <CheckCircle className="text-teal-dark" />, color: "bg-teal-50" },
+        { label: t("Active Jobs", "চলমান কাজ"), value: active.toString(), icon: <Clock className="text-blue-600" />, color: "bg-blue-50" },
+        { label: t("Rating", "রেটিং"), value: completed > 0 ? "5.0" : t("New", "নতুন"), icon: <Star className="text-yellow-500" />, color: "bg-yellow-50" },
       ]);
       setLoading(false);
     };
@@ -68,22 +70,39 @@ export default function Dashboard() {
     fetchDashboardData();
   }, [router]);
 
-  if (loading) return <div className="p-10 text-center font-bold text-teal-dark">Updating your profile...</div>;
+  const statusLabel = (status: string) => {
+    switch (status) {
+      case "assigned":
+        return t("Assigned", "অ্যাসাইনড");
+      case "submitted":
+        return t("Submitted", "জমা দেওয়া হয়েছে");
+      case "approved":
+        return t("Approved", "অনুমোদিত");
+      case "requested":
+        return t("Requested", "অনুরোধ করা হয়েছে");
+      default:
+        return status.replace("_", " ");
+    }
+  };
+
+  if (loading) return <div className="p-10 text-center font-bold text-teal-dark">{t("Updating your profile...", "আপনার প্রোফাইল আপডেট হচ্ছে...")}</div>;
 
   return (
     <div className="min-h-screen bg-gray-50 p-8">
       <div className="max-w-6xl mx-auto">
         <header className="mb-10 flex items-start justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-teal-dark">Welcome back, {userName}!</h1>
-            <p className="text-gray-600">Your real-time work summary.</p>
+            <h1 className="text-3xl font-bold text-teal-dark">
+              {t("Welcome back, {name}!", "ফিরে স্বাগতম, {name}!", { name: userName })}
+            </h1>
+            <p className="text-gray-600">{t("Your real-time work summary.", "আপনার রিয়েল-টাইম কাজের সারাংশ।")}</p>
           </div>
           <div className="mt-1">
             <button
               onClick={() => router.push('/dashboard/worker/tasks')}
               className="bg-teal-dark text-white px-4 py-2 rounded-full font-semibold hover:bg-teal-light transition"
             >
-              Browse tasks
+              {t("Browse tasks", "কাজ দেখুন")}
             </button>
           </div>
         </header>
@@ -107,21 +126,21 @@ export default function Dashboard() {
             
             {assignments.length === 0 ? (
               <div className="bg-white p-10 rounded-2xl border border-dashed text-center text-gray-400">
-                You haven&apos;t claimed any tasks yet. <br/> 
-                <button onClick={() => router.push('/dashboard/worker/tasks')} className="text-teal-dark font-bold underline mt-2">Browse tasks</button>
+                {t("You haven't claimed any tasks yet.", "আপনি এখনো কোন কাজ নেননি।")} <br/> 
+                <button onClick={() => router.push('/dashboard/worker/tasks')} className="text-teal-dark font-bold underline mt-2">{t("Browse tasks", "কাজ দেখুন")}</button>
               </div>
             ) : (
               assignments.map((assignment) => (
                 <div key={assignment.id} className="bg-white border border-teal-100 rounded-2xl p-6 relative overflow-hidden shadow-sm">
                   <div className="absolute top-0 right-0 bg-teal-dark text-white text-xs px-3 py-1 rounded-bl-lg capitalize">
-                    {assignment.status.replace('_', ' ')}
+                    {statusLabel(assignment.status)}
                   </div>
-                  <h3 className="font-bold text-lg">{assignment.tasks?.title ?? "Task"}</h3>
-                  <p className="text-gray-500 text-sm mb-4">Pay per unit: ৳{assignment.tasks?.pay_per_unit ?? 0}</p>
+                  <h3 className="font-bold text-lg">{assignment.tasks?.title ?? t("Task", "কাজ")}</h3>
+                  <p className="text-gray-500 text-sm mb-4">{t("Pay per unit", "ইউনিটপ্রতি পারিশ্রমিক")}:{" "}৳{assignment.tasks?.pay_per_unit ?? 0}</p>
                   <div className="w-full bg-gray-100 h-2 rounded-full overflow-hidden">
                     <div className="bg-teal-dark h-full w-[30%]"></div>
                   </div>
-                  <p className="text-right text-xs text-gray-400 mt-2">Started Recently</p>
+                  <p className="text-right text-xs text-gray-400 mt-2">{t("Started Recently", "সাম্প্রতিক শুরু")}</p>
                 </div>
               ))
             )}
@@ -130,17 +149,17 @@ export default function Dashboard() {
           <div className="space-y-6">
             <h2 className="text-xl font-bold text-gray-800">Onboarding Flow</h2>
             <ol className="space-y-3 text-sm text-gray-600">
-              <li>1. Register and verify phone</li>
-              <li>2. Complete profile</li>
-              <li>3. Finish training modules</li>
-              <li>4. Get certified</li>
-              <li>5. Browse tasks</li>
+              <li>1. {t("Register and verify phone", "নিবন্ধন করুন এবং ফোন যাচাই করুন")}</li>
+              <li>2. {t("Complete profile", "প্রোফাইল সম্পন্ন করুন")}</li>
+              <li>3. {t("Finish training modules", "প্রশিক্ষণ মডিউল শেষ করুন")}</li>
+              <li>4. {t("Get certified", "সার্টিফাইড হন")}</li>
+              <li>5. {t("Browse tasks", "কাজ দেখুন")}</li>
             </ol>
             <button
               onClick={() => router.push("/dashboard/worker/training")}
               className="w-full bg-teal-dark text-white py-3 rounded-lg font-bold text-sm"
             >
-              Go to Training
+              {t("Go to Training", "প্রশিক্ষণে যান")}
             </button>
           </div>
         </div>

@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { Briefcase, CalendarDays, Clock, Filter, Star } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useLanguage } from "@/components/shared/LanguageProvider";
 
 type SessionUser = {
   id: string;
@@ -44,6 +45,7 @@ type Assignment = {
 };
 
 export default function TaskFeed() {
+  const { t } = useLanguage();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [loading, setLoading] = useState(true);
@@ -57,6 +59,40 @@ export default function TaskFeed() {
     skill: "",
   });
   const router = useRouter();
+
+  const categoryLabel = (category: string) => {
+    switch (category) {
+      case "data_labeling":
+        return t("Data labeling", "ডেটা লেবেলিং");
+      case "transcription":
+        return t("Transcription", "ট্রান্সক্রিপশন");
+      case "moderation":
+        return t("Moderation", "মডারেশন");
+      case "form_filling":
+        return t("Form filling", "ফর্ম পূরণ");
+      case "other":
+        return t("Other", "অন্যান্য");
+      default:
+        return category.replace("_", " ");
+    }
+  };
+
+  const skillLabel = (skill: string) => {
+    switch (skill) {
+      case "data_entry":
+        return t("Data entry", "ডাটা এন্ট্রি");
+      case "transcription":
+        return t("Transcription", "ট্রান্সক্রিপশন");
+      case "moderation":
+        return t("Moderation", "মডারেশন");
+      case "quality_check":
+        return t("Quality check", "মান যাচাই");
+      case "form_filling":
+        return t("Form filling", "ফর্ম পূরণ");
+      default:
+        return skill.replace("_", " ");
+    }
+  };
 
   useEffect(() => {
     const getData = async () => {
@@ -122,7 +158,7 @@ export default function TaskFeed() {
       .maybeSingle();
 
     if (workerError || !workerRow) {
-      alert("Worker profile not found. Please complete worker registration.");
+      alert(t("Worker profile not found. Please complete worker registration.", "কর্মীর প্রোফাইল পাওয়া যায়নি। অনুগ্রহ করে কর্মী রেজিস্ট্রেশন সম্পন্ন করুন।"));
       return;
     }
 
@@ -137,7 +173,7 @@ export default function TaskFeed() {
         .limit(1);
 
       if (existing && existing.length > 0) {
-        alert("You have already applied or been assigned for this task.");
+        alert(t("You have already applied or been assigned for this task.", "আপনি ইতিমধ্যে এই কাজের জন্য আবেদন করেছেন বা অ্যাসাইন হয়েছেন।"));
         return;
       }
     } catch (e) {
@@ -162,7 +198,7 @@ export default function TaskFeed() {
 
       if (!assignmentDataInsert || (Array.isArray(assignmentDataInsert) && assignmentDataInsert.length === 0)) {
         console.error("assignments insert returned no data:", res);
-        alert("Error applying: no response from server — see console for details.");
+        alert(t("Error applying: no response from server — see console for details.", "আবেদন করতে সমস্যা: সার্ভার থেকে কোন উত্তর পাওয়া যায়নি — বিস্তারিত কনসোলে দেখুন।"));
         return;
       }
 
@@ -176,11 +212,11 @@ export default function TaskFeed() {
         hint: errObj?.hint,
         code: errObj?.code,
       });
-      alert("Error applying: " + errMessage + " — see console for details.");
+      alert(t("Error applying: {message} — see console for details.", "আবেদন করতে সমস্যা: {message} — বিস্তারিত কনসোলে দেখুন।", { message: errMessage }));
       return;
     }
 
-    alert("Request sent. Check your assignments below.");
+    alert(t("Request sent. Check your assignments below.", "অনুরোধ পাঠানো হয়েছে। নিচে আপনার অ্যাসাইনমেন্ট দেখুন।"));
     const { data: assignmentData } = await supabase
       .from("assignments")
       .select("*, tasks(*)")
@@ -204,7 +240,7 @@ export default function TaskFeed() {
         .upload(filePath, file, { upsert: true });
 
       if (uploadError) {
-        alert("Attachment upload failed: " + uploadError.message);
+        alert(t("Attachment upload failed: {message}", "অ্যাটাচমেন্ট আপলোড ব্যর্থ: {message}", { message: uploadError.message }));
         return;
       }
 
@@ -226,7 +262,7 @@ export default function TaskFeed() {
       .eq("id", assignmentId);
 
     if (error) {
-      alert("Submission failed: " + error.message);
+      alert(t("Submission failed: {message}", "জমা দেওয়া ব্যর্থ: {message}", { message: error.message }));
       return;
     }
 
@@ -239,19 +275,19 @@ export default function TaskFeed() {
     );
   };
 
-  if (loading) return <div className="p-10 text-center text-teal-dark font-bold">Loading tasks...</div>;
+  if (loading) return <div className="p-10 text-center text-teal-dark font-bold">{t("Loading tasks...", "কাজ লোড হচ্ছে...")}</div>;
 
   return (
     <div className="min-h-screen bg-gray-50 p-8">
       <div className="max-w-6xl mx-auto space-y-10">
         <div>
-          <h1 className="text-4xl font-bold text-teal-dark mb-2">Available Tasks</h1>
-          <p className="text-gray-600">Filter tasks and apply instantly.</p>
+          <h1 className="text-4xl font-bold text-teal-dark mb-2">{t("Available Tasks", "উপলব্ধ কাজ")}</h1>
+          <p className="text-gray-600">{t("Filter tasks and apply instantly.", "ফিল্টার করুন এবং সাথে সাথে আবেদন করুন।")}</p>
         </div>
 
         <div className="bg-white border border-gray-100 rounded-2xl p-6 flex flex-col lg:flex-row gap-6">
           <div className="flex items-center gap-2 text-gray-600 font-semibold">
-            <Filter size={16} /> Filters
+            <Filter size={16} /> {t("Filters", "ফিল্টার")}
           </div>
           <div className="grid md:grid-cols-4 gap-4 flex-1">
             <select
@@ -259,23 +295,23 @@ export default function TaskFeed() {
               value={filters.category}
               onChange={(e) => setFilters({ ...filters, category: e.target.value })}
             >
-              <option value="all">All categories</option>
+              <option value="all">{t("All categories", "সব ক্যাটাগরি")}</option>
               {categories.map((category) => (
                 <option key={category} value={category}>
-                  {category.replace("_", " ")}
+                  {categoryLabel(category)}
                 </option>
               ))}
             </select>
             <input
               className="w-full px-3 py-2 rounded-lg border border-gray-200"
-              placeholder="Min pay (BDT)"
+              placeholder={t("Min pay (BDT)", "সর্বনিম্ন পারিশ্রমিক (BDT)")}
               type="number"
               value={filters.minPay}
               onChange={(e) => setFilters({ ...filters, minPay: e.target.value })}
             />
             <input
               className="w-full px-3 py-2 rounded-lg border border-gray-200"
-              placeholder="Deadline before"
+              placeholder={t("Deadline before", "সময়সীমা")}
               type="date"
               value={filters.deadline}
               onChange={(e) => setFilters({ ...filters, deadline: e.target.value })}
@@ -285,10 +321,10 @@ export default function TaskFeed() {
               value={filters.skill}
               onChange={(e) => setFilters({ ...filters, skill: e.target.value })}
             >
-              <option value="">Any skill</option>
+              <option value="">{t("Any skill", "যেকোনো দক্ষতা")}</option>
               {skillOptions.map((skill) => (
                 <option key={skill} value={skill}>
-                  {skill.replace("_", " ")}
+                  {skillLabel(skill)}
                 </option>
               ))}
             </select>
@@ -298,7 +334,7 @@ export default function TaskFeed() {
         <div className="grid gap-6">
           {filteredTasks.length === 0 ? (
             <div className="text-center p-16 bg-white rounded-3xl border">
-              <p className="text-gray-400 font-medium">No tasks available right now. Check back soon!</p>
+              <p className="text-gray-400 font-medium">{t("No tasks available right now. Check back soon!", "এখন কোন কাজ নেই। শিগগির আবার দেখুন!")}</p>
             </div>
           ) : (
             filteredTasks.map((task) => (
@@ -307,8 +343,8 @@ export default function TaskFeed() {
                   <h3 className="text-xl font-bold text-gray-900">{task.title}</h3>
                   <p className="text-gray-600 max-w-xl">{task.description}</p>
                   <div className="flex flex-wrap gap-4 text-sm text-gray-500">
-                    <span className="flex items-center gap-1"><Briefcase size={14} /> {task.category.replace("_", " ")}</span>
-                    <span className="flex items-center gap-1"><Clock size={14} /> {task.total_units} units</span>
+                    <span className="flex items-center gap-1"><Briefcase size={14} /> {categoryLabel(task.category)}</span>
+                    <span className="flex items-center gap-1"><Clock size={14} /> {task.total_units} {t("units", "ইউনিট")}</span>
                     {task.deadline ? (
                       <span className="flex items-center gap-1"><CalendarDays size={14} /> {new Date(task.deadline).toLocaleDateString()}</span>
                     ) : null}
@@ -317,7 +353,7 @@ export default function TaskFeed() {
                     <div className="flex flex-wrap gap-2">
                       {task.required_skills.map((skill) => (
                         <span key={skill} className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full">
-                          {skill.replace("_", " ")}
+                          {skillLabel(skill)}
                         </span>
                       ))}
                     </div>
@@ -331,15 +367,15 @@ export default function TaskFeed() {
                       onClick={() => handleApply(task.id)}
                       className="bg-teal-dark text-white px-6 py-2 rounded-full font-bold hover:bg-teal-light transition-all w-full lg:w-auto"
                     >
-                      Apply
+                      {t("Apply", "আবেদন করুন")}
                     </button>
                   ) : role === "employer" ? (
                     <button disabled className="bg-gray-200 text-gray-500 px-6 py-2 rounded-full font-bold w-full lg:w-auto">
-                      Employers cannot apply
+                      {t("Employers cannot apply", "নিয়োগদাতারা আবেদন করতে পারবেন না")}
                     </button>
                   ) : (
                     <button onClick={() => router.push('/auth/login')} className="bg-teal-dark text-white px-6 py-2 rounded-full font-bold hover:bg-teal-light transition-all w-full lg:w-auto">
-                      Login to Apply
+                      {t("Login to Apply", "আবেদন করতে লগইন করুন")}
                     </button>
                   )}
                 </div>
@@ -349,21 +385,21 @@ export default function TaskFeed() {
         </div>
 
         <div className="space-y-4">
-          <h2 className="text-2xl font-bold text-gray-900">My Assignments</h2>
+          <h2 className="text-2xl font-bold text-gray-900">{t("My Assignments", "আমার অ্যাসাইনমেন্ট")}</h2>
           {assignments.length === 0 ? (
             <div className="bg-white rounded-2xl border border-gray-100 p-10 text-center text-gray-400">
-              No assignments yet. Apply to a task above to get started.
+              {t("No assignments yet. Apply to a task above to get started.", "এখনো কোন অ্যাসাইনমেন্ট নেই। শুরু করতে উপরের কোনো কাজে আবেদন করুন।")}
             </div>
           ) : (
             assignments.map((assignment) => (
               <div key={assignment.id} className="bg-white border border-gray-100 rounded-2xl p-6">
                 <div className="flex flex-col lg:flex-row justify-between gap-4">
                   <div>
-                    <p className="text-lg font-bold text-gray-900">{assignment.tasks?.title ?? "Task"}</p>
-                    <p className="text-sm text-gray-500">Status: {assignment.status.replace("_", " ")}</p>
+                    <p className="text-lg font-bold text-gray-900">{assignment.tasks?.title ?? t("Task", "কাজ")}</p>
+                    <p className="text-sm text-gray-500">{t("Status", "অবস্থা")}: {assignment.status.replace("_", " ")}</p>
                   </div>
                   <div className="flex items-center gap-2 text-sm text-gray-500">
-                    <Star size={14} /> Units assigned: {assignment.units_assigned ?? 0}
+                    <Star size={14} /> {t("Units assigned", "নির্ধারিত ইউনিট")}: {assignment.units_assigned ?? 0}
                   </div>
                 </div>
                 <div className="mt-4 flex flex-col md:flex-row gap-3">
@@ -382,12 +418,12 @@ export default function TaskFeed() {
                     className="bg-saffron text-teal-dark px-4 py-2 rounded-full font-bold disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {assignment.status === "assigned"
-                      ? "Submit Work"
+                      ? t("Submit Work", "কাজ জমা দিন")
                       : assignment.status === "submitted"
-                        ? "Awaiting Review"
+                        ? t("Awaiting Review", "রিভিউ অপেক্ষমান")
                         : assignment.status === "approved"
-                          ? "Awaiting Payment"
-                          : "Awaiting Assignment"}
+                          ? t("Awaiting Payment", "পেমেন্ট অপেক্ষমান")
+                          : t("Awaiting Assignment", "অ্যাসাইনমেন্ট অপেক্ষমান")}
                   </button>
                 </div>
               </div>

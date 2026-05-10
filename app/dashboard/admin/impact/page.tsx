@@ -1,24 +1,30 @@
-const metrics = [
-	{ label: "Women employed", value: "520" },
-	{ label: "Income generated", value: "BDT 1.3M" },
-	{ label: "Districts reached", value: "18" },
-	{ label: "Tasks completed", value: "4,900" },
-];
+"use client";
 
-const districts = [
-	{ name: "Dhaka", workers: 220 },
-	{ name: "Khulna", workers: 120 },
-	{ name: "Rajshahi", workers: 90 },
-	{ name: "Sylhet", workers: 70 },
-];
+import { useLanguage } from "@/components/shared/LanguageProvider";
 
 export default function ImpactPage() {
+	const { t } = useLanguage();
+
+	const metrics = [
+		{ label: t("Women employed", "কর্মরত নারী"), value: "520" },
+		{ label: t("Income generated", "উৎপন্ন আয়"), value: "BDT 1.3M" },
+		{ label: t("Districts reached", "আবদ্ধ জেলা"), value: "18" },
+		{ label: t("Tasks completed", "সম্পন্ন কাজ"), value: "4,900" },
+	];
+
+	const districts = [
+		{ name: t("Dhaka", "ঢাকা"), workers: 220 },
+		{ name: t("Khulna", "খুলনা"), workers: 120 },
+		{ name: t("Rajshahi", "রাজশাহী"), workers: 90 },
+		{ name: t("Sylhet", "সিলেট"), workers: 70 },
+	];
+
 	return (
 		<div className="min-h-screen bg-gray-50 p-8">
 			<div className="max-w-6xl mx-auto space-y-8">
 				<header className="space-y-2">
-					<h1 className="text-3xl font-bold text-teal-dark">Impact Metrics</h1>
-					<p className="text-gray-600">Track program outcomes for reporting and partnerships.</p>
+					<h1 className="text-3xl font-bold text-teal-dark">{t("Impact Metrics", "ইমপ্যাক্ট মেট্রিক")}</h1>
+					<p className="text-gray-600">{t("Track program outcomes for reporting and partnerships.", "রিপোর্টিং ও অংশীদারিত্বের জন্য ফলাফল ট্র্যাক করুন।")}</p>
 				</header>
 
 				<div className="grid grid-cols-1 md:grid-cols-4 gap-6">
@@ -31,12 +37,12 @@ export default function ImpactPage() {
 				</div>
 
 				<div className="bg-white rounded-2xl border border-gray-100 p-6">
-					<h2 className="text-xl font-bold text-gray-900 mb-4">District coverage</h2>
+					<h2 className="text-xl font-bold text-gray-900 mb-4">{t("District coverage", "জেলা কভারেজ")}</h2>
 					<div className="space-y-4">
 						{districts.map((district) => (
 							<div key={district.name} className="flex items-center justify-between text-sm">
 								<span className="font-semibold text-gray-800">{district.name}</span>
-								<span className="text-gray-600">{district.workers} workers</span>
+								<span className="text-gray-600">{district.workers} {t("workers", "কর্মী")}</span>
 							</div>
 						))}
 					</div>

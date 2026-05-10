@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import { useLanguage } from "@/components/shared/LanguageProvider";
 
 type WorkerProfile = {
   id: string;
@@ -22,6 +23,7 @@ type PaymentRow = {
 
 export default function WorkerSummaryPage() {
   const router = useRouter();
+  const { t } = useLanguage();
   const params = useParams();
   const workerId = Array.isArray(params?.id) ? params.id[0] : params?.id;
 
@@ -83,30 +85,30 @@ export default function WorkerSummaryPage() {
   }, [assignments, payments]);
 
   if (loading) {
-    return <div className="p-10 text-center font-bold text-teal-dark">Loading worker summary...</div>;
+    return <div className="p-10 text-center font-bold text-teal-dark">{t("Loading worker summary...", "কর্মীর সারাংশ লোড হচ্ছে...")}</div>;
   }
 
   return (
     <div className="min-h-screen bg-gray-50 p-8">
       <div className="max-w-4xl mx-auto space-y-6">
         <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold text-teal-dark">{profile?.full_name ?? "Worker"}</h1>
+          <h1 className="text-3xl font-bold text-teal-dark">{profile?.full_name ?? t("Worker", "কর্মী")}</h1>
           <Link className="text-sm font-semibold text-teal-dark underline" href="/dashboard/employer">
-            Back to dashboard
+            {t("Back to dashboard", "ড্যাশবোর্ডে ফিরে যান")}
           </Link>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="bg-white p-6 rounded-2xl border border-gray-100">
-            <p className="text-sm text-gray-500">Total earned</p>
+            <p className="text-sm text-gray-500">{t("Total earned", "মোট আয়")}</p>
             <p className="text-2xl font-bold text-gray-900">৳ {stats.totalEarned}</p>
           </div>
           <div className="bg-white p-6 rounded-2xl border border-gray-100">
-            <p className="text-sm text-gray-500">Tasks done</p>
+            <p className="text-sm text-gray-500">{t("Tasks done", "সম্পন্ন কাজ")}</p>
             <p className="text-2xl font-bold text-gray-900">{stats.completed}</p>
           </div>
           <div className="bg-white p-6 rounded-2xl border border-gray-100">
-            <p className="text-sm text-gray-500">Active jobs</p>
+            <p className="text-sm text-gray-500">{t("Active jobs", "চলমান কাজ")}</p>
             <p className="text-2xl font-bold text-gray-900">{stats.active}</p>
           </div>
         </div>

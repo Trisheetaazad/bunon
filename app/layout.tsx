@@ -1,6 +1,7 @@
 // app/layout.tsx
 import "./globals.css";
 import Navbar from "@/components/shared/Navbar";
+import { LanguageProvider } from "@/components/shared/LanguageProvider";
 
 export const metadata = {
   title: "HerWork — Remote Jobs for Women in Bangladesh",
@@ -16,8 +17,10 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="min-h-screen bg-white text-gray-900 antialiased">
-        <Navbar />
-        {children}
+        <LanguageProvider>
+          <Navbar />
+          {children}
+        </LanguageProvider>
       </body>
     </html>
   );
