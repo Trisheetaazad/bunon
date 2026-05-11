@@ -1,7 +1,9 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useLanguage } from "@/components/shared/LanguageProvider";
+import workerImage from "@/app/picture/01-UNICEF-HostCom-Sabina.webp";
 
 export default function Hero() {
   const { language, t } = useLanguage();
@@ -40,11 +42,15 @@ export default function Hero() {
           </div>
         </div>
         <div className="relative">
-          <div className="w-full h-[400px] bg-teal-dark/5 rounded-3xl border-2 border-dashed border-teal-dark/20 flex items-center justify-center overflow-hidden">
-            <div className="text-teal-dark/40 font-medium italic">
-              {t("Image of Empowered Worker", "ক্ষমতায়িত কর্মীর ছবি")}
-            </div>
-            {/* Once you have an image, use: <img src="/hero-img.jpg" className="object-cover w-full h-full" /> */}
+          <div className="relative w-full h-[400px] bg-teal-dark/5 rounded-3xl border-2 border-dashed border-teal-dark/20 overflow-hidden">
+            <Image
+              src={workerImage}
+              alt={t("Image of Empowered Worker", "ক্ষমতায়িত কর্মীর ছবি")}
+              fill
+              sizes="(min-width: 768px) 50vw, 100vw"
+              className="object-cover"
+              priority
+            />
           </div>
           {/* Decorative element */}
           <div className="absolute -bottom-6 -left-6 w-24 h-24 bg-saffron rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-pulse"></div>
