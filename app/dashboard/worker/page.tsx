@@ -8,6 +8,7 @@ import { useLanguage } from "@/components/shared/LanguageProvider";
 type AssignmentSummary = {
   id: string;
   status: string;
+  payment_status?: string | null;
   tasks?: {
     title?: string | null;
     status?: string | null;
@@ -85,6 +86,13 @@ export default function Dashboard() {
     }
   };
 
+  const assignmentStatusLabel = (assignment: AssignmentSummary) => {
+    if (assignment.status === "approved" && assignment.payment_status === "paid") {
+      return t("Complete", "সম্পন্ন");
+    }
+    return statusLabel(assignment.status);
+  };
+
   if (loading) return <div className="p-10 text-center font-bold text-teal-dark">{t("Updating your profile...", "আপনার প্রোফাইল আপডেট হচ্ছে...")}</div>;
 
   return (
@@ -133,7 +141,7 @@ export default function Dashboard() {
               assignments.map((assignment) => (
                 <div key={assignment.id} className="bg-white border border-teal-100 rounded-2xl p-6 relative overflow-hidden shadow-sm">
                   <div className="absolute top-0 right-0 bg-teal-dark text-white text-xs px-3 py-1 rounded-bl-lg capitalize">
-                    {statusLabel(assignment.status)}
+                    {assignmentStatusLabel(assignment)}
                   </div>
                   <h3 className="font-bold text-lg">{assignment.tasks?.title ?? t("Task", "কাজ")}</h3>
                   <p className="text-gray-500 text-sm mb-4">{t("Pay per unit", "ইউনিটপ্রতি পারিশ্রমিক")}:{" "}৳{assignment.tasks?.pay_per_unit ?? 0}</p>

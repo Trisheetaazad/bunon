@@ -27,6 +27,7 @@ type AssignmentRequest = {
 	task_id: string;
 	worker_id: string;
 	status: string;
+	payment_status?: string | null;
 	created_at: string;
 	attachment_url?: string | null;
 	profile: WorkerProfile | null;
@@ -39,6 +40,7 @@ export default function EmployerDashboard() {
 	const [postedTasks, setPostedTasks] = useState<PostedTask[]>([]);
 	const [assignmentRequests, setAssignmentRequests] = useState<AssignmentRequest[]>([]);
 	const [expandedTaskId, setExpandedTaskId] = useState<string | null>(null);
+	const [paymentLoadingId, setPaymentLoadingId] = useState<string | null>(null);
 
 	useEffect(() => {
 		const fetchEmployerData = async () => {
@@ -67,7 +69,7 @@ export default function EmployerDashboard() {
 			const taskIds = tasks.map((task) => task.id);
 			const { data: assignmentData } = await supabase
 				.from("assignments")
-				.select("id, task_id, worker_id, status, created_at, attachment_url")
+				.select("id, task_id, worker_id, status, payment_status, created_at, attachment_url")
 				.in("task_id", taskIds)
 				.order("created_at", { ascending: false });
 
@@ -144,6 +146,27 @@ export default function EmployerDashboard() {
 		}, {});
 	}, [assignmentRequests]);
 
+	const statusLabel = (status: string) => {
+		switch (status) {
+			case "open":
+				return t("Open", "খোলা");
+			case "assigned":
+				return t("Assigned", "অ্যাসাইনড");
+			case "submitted":
+				return t("Submitted", "জমা দেওয়া হয়েছে");
+			case "approved":
+				return t("Approved", "অনুমোদিত");
+			case "rejected":
+				return t("Rejected", "বাতিল");
+			case "completed":
+				return t("Completed", "সম্পন্ন");
+			case "requested":
+				return t("Requested", "অনুরোধ করা হয়েছে");
+			default:
+				return status.replace("_", " ");
+		}
+	};
+
 	const handleApprove = async (taskId: string, assignmentId: string) => {
 		const { error: assignmentError } = await supabase
 			.from("assignments")
@@ -208,7 +231,7 @@ export default function EmployerDashboard() {
 		setExpandedTaskId(null);
 	};
 
-	const handleAssign = async (taskId: string, assignmentId: string) => {
+	const handleAssign = async (taskId: string, assignmentId: string, workerId: string) => {
 		const assignedAt = new Date().toISOString();
 		const { error: assignmentError } = await supabase
 			.from("assignments")
@@ -242,6 +265,15 @@ export default function EmployerDashboard() {
 			return;
 		}
 
+		const { error: paymentError } = await supabase
+			.from("payments")
+			.update({ worker_id: workerId, assignment_id: assignmentId })
+			.eq("task_id", taskId);
+
+		if (paymentError) {
+			console.warn("payments update error:", paymentError);
+		}
+
 		setPostedTasks((prev) =>
 			prev.map((task) => (task.id === taskId ? { ...task, status: "assigned" } : task))
 		);
@@ -254,6 +286,38 @@ export default function EmployerDashboard() {
 			})
 		);
 		setExpandedTaskId(null);
+	};
+
+	const handleMakePayment = async (taskId: string, assignmentId: string) => {
+		setPaymentLoadingId(assignmentId);
+		const paidAt = new Date().toISOString();
+
+		const { error: assignmentError } = await supabase
+			.from("assignments")
+			.update({ payment_status: "paid" })
+			.eq("id", assignmentId);
+
+		if (assignmentError) {
+			alert(t("Unable to mark payment: {message}", "পেমেন্ট চিহ্নিত করা যায়নি: {message}", { message: assignmentError.message }));
+			setPaymentLoadingId(null);
+			return;
+		}
+
+		const { error: paymentError } = await supabase
+			.from("payments")
+			.update({ status: "completed", paid_at: paidAt })
+			.eq("task_id", taskId);
+
+		if (paymentError) {
+			console.warn("payments status update error:", paymentError);
+		}
+
+		setAssignmentRequests((prev) =>
+			prev.map((request) =>
+				request.id === assignmentId ? { ...request, payment_status: "paid" } : request
+			)
+		);
+		setPaymentLoadingId(null);
 	};
 
 	if (loading) {
@@ -311,7 +375,7 @@ export default function EmployerDashboard() {
 													<div className="flex flex-wrap gap-4 text-xs text-gray-500 mt-3">
 														<span>{t("Pay per unit", "ইউনিটপ্রতি পারিশ্রমিক")}: ৳{task.pay_per_unit}</span>
 														<span>{t("Total units", "মোট ইউনিট")}: {task.total_units}</span>
-														<span className="capitalize">{t("Status", "অবস্থা")}: {task.status.replace("_", " ")}</span>
+														<span className="capitalize">{t("Status", "অবস্থা")}: {statusLabel(task.status)}</span>
 													</div>
 												</div>
 												<div className="flex flex-col items-start md:items-end gap-2">
@@ -319,10 +383,15 @@ export default function EmployerDashboard() {
 													{approvedRequest ? (
 														<button
 															type="button"
-															className="bg-teal-dark text-white px-4 py-2 rounded-full text-sm font-semibold"
-															onClick={() => alert(t("Payment flow not set up yet.", "পেমেন্ট ফ্লো এখনো সেটআপ হয়নি।"))}
+															className="bg-teal-dark text-white px-4 py-2 rounded-full text-sm font-semibold disabled:opacity-50"
+															onClick={() => handleMakePayment(task.id, approvedRequest.id)}
+															disabled={approvedRequest.payment_status === "paid" || paymentLoadingId === approvedRequest.id}
 														>
-															{t("Make a Payment", "পেমেন্ট করুন")}
+															{approvedRequest.payment_status === "paid"
+																? t("Paid", "পরিশোধিত")
+																: paymentLoadingId === approvedRequest.id
+																	? t("Processing...", "প্রসেস হচ্ছে...")
+																	: t("Make a Payment", "পেমেন্ট করুন")}
 														</button>
 													) : submittedRequest ? (
 														<button
@@ -406,7 +475,7 @@ export default function EmployerDashboard() {
 																	</Link>
 																</div>
 																<button
-																	onClick={() => handleAssign(task.id, request.id)}
+																	onClick={() => handleAssign(task.id, request.id, request.worker_id)}
 																	className="bg-saffron text-teal-dark px-4 py-2 rounded-full text-sm font-bold"
 																>
 																	{t("Assign worker", "কর্মী অ্যাসাইন করুন")}

@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 import { useLanguage } from "@/components/shared/LanguageProvider";
@@ -8,6 +8,8 @@ export default function PostTask() {
   const router = useRouter();
   const { t } = useLanguage();
   const [loading, setLoading] = useState(false);
+  const [showPayment, setShowPayment] = useState(false);
+  const [paymentAmount, setPaymentAmount] = useState(0);
   const [task, setTask] = useState({
     title: "",
     description: "",
@@ -35,8 +37,35 @@ export default function PostTask() {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const getPaymentAmount = () => {
+    const payPerUnit = Math.max(0, Math.floor(Number(task.payPerUnit)));
+    const totalUnits = Math.max(0, Math.floor(Number(task.totalUnits)));
+
+    if (!Number.isFinite(payPerUnit) || !Number.isFinite(totalUnits)) return 0;
+    return payPerUnit * totalUnits;
+  };
+
+  useEffect(() => {
+    if (!showPayment) return;
+    setPaymentAmount(getPaymentAmount());
+  }, [showPayment, task.payPerUnit, task.totalUnits]);
+
+  const handleConfirmTask = () => {
+    const nextPayment = getPaymentAmount();
+    if (!nextPayment) {
+      alert(t("Please enter valid pay per unit and total units.", "অনুগ্রহ করে সঠিক ইউনিটপ্রতি পারিশ্রমিক ও মোট ইউনিট দিন।"));
+      return;
+    }
+    setPaymentAmount(nextPayment);
+    setShowPayment(true);
+  };
+
+  const handleSubmitTask = async () => {
+    if (!showPayment) {
+      handleConfirmTask();
+      return;
+    }
+
     setLoading(true);
 
     const { data: { session } } = await supabase.auth.getSession();
@@ -49,7 +78,7 @@ export default function PostTask() {
 
     const { data: employerRow, error: employerError } = await supabase
       .from("employers")
-      .select("id")
+      .select("id, company_name")
       .eq("id", employerId)
       .maybeSingle();
 
@@ -59,7 +88,9 @@ export default function PostTask() {
       return;
     }
 
-    const { data: taskData, error } = await supabase.from("tasks").insert({
+    const { data: taskRow, error: taskError } = await supabase
+      .from("tasks")
+      .insert({
       employer_id: employerId,
       title: task.title,
       description: task.description,
@@ -69,16 +100,37 @@ export default function PostTask() {
       deadline: task.deadline ? new Date(task.deadline).toISOString() : null,
       status: "open",
       required_skills: task.requiredSkills,
-    });
+      })
+      .select("id")
+      .maybeSingle();
 
-    if (error) {
-      console.error("tasks insert error:", error);
-      alert(t("Error posting task: {message} — see console for details.", "কাজ পোস্ট করতে সমস্যা: {message} — বিস্তারিত কনসোলে দেখুন।", { message: error.message }));
-    } else {
-      console.log("task posted:", taskData);
-      alert(t("Task posted successfully!", "কাজ সফলভাবে পোস্ট হয়েছে!"));
-      router.push("/dashboard/employer");
+    if (taskError || !taskRow?.id) {
+      console.error("tasks insert error:", taskError);
+      alert(t("Error posting task: {message} — see console for details.", "কাজ পোস্ট করতে সমস্যা: {message} — বিস্তারিত কনসোলে দেখুন।", { message: taskError?.message ?? "Unknown error" }));
+      setLoading(false);
+      return;
     }
+
+    const { error: paymentError } = await supabase
+      .from("payments")
+      .insert({
+        task_id: taskRow.id,
+        employer_id: employerId,
+        amount: paymentAmount,
+        status: "pending",
+        worker_id: null,
+        assignment_id: null,
+      });
+
+    if (paymentError) {
+      console.error("payments insert error:", paymentError);
+      alert(t("Payment setup failed: {message} — see console for details.", "পেমেন্ট সেটআপ ব্যর্থ: {message} — বিস্তারিত কনসোলে দেখুন।", { message: paymentError.message }));
+      setLoading(false);
+      return;
+    }
+
+    alert(t("Task posted and payment submitted!", "কাজ পোস্ট হয়েছে এবং পেমেন্ট পাঠানো হয়েছে!"));
+    router.push("/dashboard/employer");
     setLoading(false);
   };
 
@@ -88,7 +140,7 @@ export default function PostTask() {
         <h1 className="text-3xl font-bold text-teal-dark mb-2">{t("Post a New Task", "নতুন কাজ পোস্ট করুন")}</h1>
         <p className="text-gray-600 mb-8">{t("Fill in the details to find a skilled worker for your project.", "আপনার প্রকল্পের জন্য দক্ষ কর্মী খুঁজতে বিস্তারিত দিন।")}</p>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={(e) => e.preventDefault()} className="space-y-6">
           <div>
             <label className="block text-sm font-bold text-gray-700 mb-2">{t("Job Title", "কাজের শিরোনাম")}</label>
             <input
@@ -159,6 +211,18 @@ export default function PostTask() {
             </div>
           </div>
 
+          {showPayment ? (
+            <div>
+              <label className="block text-sm font-bold text-gray-700 mb-2">{t("Payment (৳)", "পেমেন্ট (৳)")}</label>
+              <input
+                readOnly
+                type="number"
+                value={paymentAmount}
+                className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 text-gray-700"
+              />
+            </div>
+          ) : null}
+
           <div>
             <label className="block text-sm font-bold text-gray-700 mb-2">{t("Required skills", "প্রয়োজনীয় দক্ষতা")}</label>
             <div className="grid sm:grid-cols-2 gap-3">
@@ -180,13 +244,24 @@ export default function PostTask() {
             </div>
           </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-teal-dark text-white py-4 rounded-xl font-bold text-lg hover:bg-teal-light transition-all disabled:opacity-50"
-          >
-            {loading ? t("Posting...", "পোস্ট হচ্ছে...") : t("Publish Task", "কাজ প্রকাশ করুন")}
-          </button>
+          {!showPayment ? (
+            <button
+              type="button"
+              onClick={handleConfirmTask}
+              className="w-full bg-teal-dark text-white py-4 rounded-xl font-bold text-lg hover:bg-teal-light transition-all"
+            >
+              {t("Confirm Task", "কাজ নিশ্চিত করুন")}
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={handleSubmitTask}
+              disabled={loading}
+              className="w-full bg-teal-dark text-white py-4 rounded-xl font-bold text-lg hover:bg-teal-light transition-all disabled:opacity-50"
+            >
+              {loading ? t("Submitting...", "সাবমিট হচ্ছে...") : t("Deposit Payment and Submit Post", "পেমেন্ট জমা দিন ও পোস্ট সাবমিট করুন")}
+            </button>
+          )}
         </form>
       </div>
     </div>

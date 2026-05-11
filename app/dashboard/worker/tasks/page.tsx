@@ -41,6 +41,7 @@ type Assignment = {
   units_assigned: number | null;
   units_done: number | null;
   attachment_url?: string | null;
+  payment_status?: string | null;
   tasks?: Task;
 };
 
@@ -92,6 +93,36 @@ export default function TaskFeed() {
       default:
         return skill.replace("_", " ");
     }
+  };
+
+  const statusLabel = (status: string) => {
+    switch (status) {
+      case "requested":
+        return t("Requested", "অনুরোধ করা হয়েছে");
+      case "assigned":
+        return t("Assigned", "অ্যাসাইনড");
+      case "submitted":
+        return t("Submitted", "জমা দেওয়া হয়েছে");
+      case "approved":
+        return t("Approved", "অনুমোদিত");
+      case "rejected":
+        return t("Rejected", "বাতিল");
+      case "completed":
+        return t("Completed", "সম্পন্ন");
+      case "open":
+        return t("Open", "খোলা");
+      case "pending":
+        return t("Pending", "অপেক্ষমান");
+      default:
+        return status.replace("_", " ");
+    }
+  };
+
+  const assignmentStatusLabel = (assignment: Assignment) => {
+    if (assignment.status === "approved" && assignment.payment_status === "paid") {
+      return t("Complete", "সম্পন্ন");
+    }
+    return statusLabel(assignment.status);
   };
 
   useEffect(() => {
@@ -396,7 +427,7 @@ export default function TaskFeed() {
                 <div className="flex flex-col lg:flex-row justify-between gap-4">
                   <div>
                     <p className="text-lg font-bold text-gray-900">{assignment.tasks?.title ?? t("Task", "কাজ")}</p>
-                    <p className="text-sm text-gray-500">{t("Status", "অবস্থা")}: {assignment.status.replace("_", " ")}</p>
+                    <p className="text-sm text-gray-500">{t("Status", "অবস্থা")}: {assignmentStatusLabel(assignment)}</p>
                   </div>
                   <div className="flex items-center gap-2 text-sm text-gray-500">
                     <Star size={14} /> {t("Units assigned", "নির্ধারিত ইউনিট")}: {assignment.units_assigned ?? 0}
@@ -414,16 +445,18 @@ export default function TaskFeed() {
                   />
                   <button
                     onClick={() => handleSubmitWork(assignment.id)}
-                    disabled={assignment.status !== "assigned"}
+                    disabled={assignment.status !== "assigned" || assignment.payment_status === "paid"}
                     className="bg-saffron text-teal-dark px-4 py-2 rounded-full font-bold disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    {assignment.status === "assigned"
-                      ? t("Submit Work", "কাজ জমা দিন")
-                      : assignment.status === "submitted"
-                        ? t("Awaiting Review", "রিভিউ অপেক্ষমান")
-                        : assignment.status === "approved"
-                          ? t("Awaiting Payment", "পেমেন্ট অপেক্ষমান")
-                          : t("Awaiting Assignment", "অ্যাসাইনমেন্ট অপেক্ষমান")}
+                    {assignment.payment_status === "paid"
+                      ? t("Paid", "পরিশোধিত")
+                      : assignment.status === "assigned"
+                        ? t("Submit Work", "কাজ জমা দিন")
+                        : assignment.status === "submitted"
+                          ? t("Awaiting Review", "রিভিউ অপেক্ষমান")
+                          : assignment.status === "approved"
+                            ? t("Awaiting Payment", "পেমেন্ট অপেক্ষমান")
+                            : t("Awaiting Assignment", "অ্যাসাইনমেন্ট অপেক্ষমান")}
                   </button>
                 </div>
               </div>

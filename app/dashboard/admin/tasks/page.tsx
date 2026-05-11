@@ -35,6 +35,25 @@ export default function AdminTasks() {
     }
   };
 
+  const statusLabel = (status: string) => {
+    switch (status) {
+      case "open":
+        return t("Open", "খোলা");
+      case "assigned":
+        return t("Assigned", "অ্যাসাইনড");
+      case "submitted":
+        return t("Submitted", "জমা দেওয়া হয়েছে");
+      case "approved":
+        return t("Approved", "অনুমোদিত");
+      case "rejected":
+        return t("Rejected", "বাতিল");
+      case "completed":
+        return t("Completed", "সম্পন্ন");
+      default:
+        return status.replace("_", " ");
+    }
+  };
+
   useEffect(() => {
     const fetchTasks = async () => {
       const { data } = await supabase
@@ -72,7 +91,7 @@ export default function AdminTasks() {
                 <div key={task.id} className="grid grid-cols-5 gap-4 px-6 py-4 text-sm items-center">
                   <span className="font-semibold text-gray-900">{task.title}</span>
                   <span className="text-gray-600">{categoryLabel(task.category)}</span>
-                  <span className="text-teal-dark font-semibold">{task.status}</span>
+                  <span className="text-teal-dark font-semibold">{statusLabel(task.status)}</span>
                   <span className="text-gray-600">BDT {task.pay_per_unit}</span>
                   <span className="text-gray-600">{task.total_units}</span>
                 </div>

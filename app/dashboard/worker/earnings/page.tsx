@@ -17,6 +17,19 @@ export default function WorkerEarnings() {
 	const [payments, setPayments] = useState<Payment[]>([]);
 	const [loading, setLoading] = useState(true);
 
+	const statusLabel = (status: string) => {
+		switch (status) {
+			case "completed":
+				return t("Completed", "সম্পন্ন");
+			case "pending":
+				return t("Pending", "অপেক্ষমান");
+			case "failed":
+				return t("Failed", "ব্যর্থ");
+			default:
+				return status.replace("_", " ");
+		}
+	};
+
 	useEffect(() => {
 		const fetchPayments = async () => {
 			const { data: { session } } = await supabase.auth.getSession();
@@ -84,7 +97,7 @@ export default function WorkerEarnings() {
 								<div key={payment.id} className="grid grid-cols-4 gap-4 px-6 py-4 text-sm items-center">
 									<span className="font-semibold text-gray-900">{payment.id}</span>
 									<span className="text-gray-600">BDT {payment.amount.toLocaleString()}</span>
-									<span className="text-teal-dark font-semibold">{payment.status}</span>
+									<span className="text-teal-dark font-semibold">{statusLabel(payment.status)}</span>
 									<span className="text-gray-600">
 										{new Date(payment.paid_at ?? payment.created_at).toLocaleDateString()}
 									</span>
